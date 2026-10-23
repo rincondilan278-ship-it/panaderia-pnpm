@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Panadería",
+    "slug": "panaderia-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#171717",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"]
+  }
+}
