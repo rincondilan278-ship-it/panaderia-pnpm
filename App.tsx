@@ -1,172 +1,173 @@
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
   SafeAreaView,
   View,
   Text,
-  TextInput,
   FlatList,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
   StatusBar,
 } from 'react-native';
 
-type Contact = {
-  id: string;
-  name: string;
-  phone: string;
+import {
+  NavigationContainer,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+  NativeStackRouteProp,
+} from '@react-navigation/native-stack';
+
+// Tipos de parámetros de las pantallas
+type RootStackParamList = {
+  Home: undefined;
+  Detail: {
+    id: string;
+    name: string;
+  };
 };
 
-const CONTACTS: Contact[] = [
-  { id: '1', name: 'Ana Martínez', phone: '3001234567' },
-  { id: '2', name: 'Carlos Rodríguez', phone: '3102345678' },
-  { id: '3', name: 'Laura Gómez', phone: '3203456789' },
-  { id: '4', name: 'Daniel Pérez', phone: '3014567890' },
-  { id: '5', name: 'María Fernández', phone: '3155678901' },
-  { id: '6', name: 'Andrés López', phone: '3006789012' },
-  { id: '7', name: 'Sofía Ramírez', phone: '3117890123' },
-  { id: '8', name: 'Juan Torres', phone: '3218901234' },
-  { id: '9', name: 'Valentina Castro', phone: '3029012345' },
-  { id: '10', name: 'Mateo Herrera', phone: '3160123456' },
-  { id: '11', name: 'Isabella Moreno', phone: '3121234567' },
-  { id: '12', name: 'Sebastián Díaz', phone: '3222345678' },
+// Tipado del Stack Navigator
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Datos de ejemplo
+type Item = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+const ITEMS: Item[] = [
+  { id: '1', name: 'Pan artesanal', description: 'Pan recién horneado.' },
+  { id: '2', name: 'Croissant', description: 'Hojaldre de mantequilla.' },
+  { id: '3', name: 'Pan de chocolate', description: 'Pan dulce con chocolate.' },
+  { id: '4', name: 'Almojábana', description: 'Producto tradicional de queso.' },
+  { id: '5', name: 'Torta de vainilla', description: 'Torta suave y esponjosa.' },
 ];
 
-export default function App() {
-  // PASO 1: Estado controlado del buscador
-  const [query, setQuery] = useState<string>('');
+// Pantalla principal
+function HomeScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Home'>>();
 
-  // PASO 2: Filtrar contactos con useMemo
-  const filteredContacts = useMemo(() => {
-    const search = query.trim().toLowerCase();
-
-    if (!search) {
-      return CONTACTS;
-    }
-
-    return CONTACTS.filter(
-      (contact) =>
-        contact.name.toLowerCase().includes(search) ||
-        contact.phone.includes(search)
-    );
-  }, [query]);
-
-  // PASO 3: Renderizar cada contacto
-  const renderItem = ({ item }: { item: Contact }) => (
+  const renderItem = ({ item }: { item: Item }) => (
     <Pressable
       style={({ pressed }) => [
-        styles.contactCard,
-        pressed && styles.contactPressed,
+        styles.itemCard,
+        pressed && styles.itemPressed,
       ]}
-      onPress={() => {
-        Keyboard.dismiss();
-        console.log('Contacto seleccionado:', item.name);
-      }}
+      onPress={() => navigation.navigate('Detail', {
+        id: item.id,
+        name: item.name,
+      })}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {item.name.charAt(0).toUpperCase()}
-        </Text>
+      <View style={styles.itemNumber}>
+        <Text style={styles.itemNumberText}>{item.id}</Text>
       </View>
 
-      <View style={styles.contactInfo}>
-        <Text style={styles.contactName}>{item.name}</Text>
-        <Text style={styles.contactPhone}>{item.phone}</Text>
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemDescription}>{item.description}</Text>
       </View>
 
       <Text style={styles.arrow}>›</Text>
     </Pressable>
   );
 
-  // PASO 3: Estado vacío personalizado
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>⌕</Text>
-      <Text style={styles.emptyText}>
-        Sin resultados para "{query}"
-      </Text>
-      <Text style={styles.emptySubText}>
-        Intenta con otro nombre o número.
-      </Text>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8E7" />
 
-      {/* PASO 4: Control del teclado */}
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <TouchableWithoutFeedback
-          onPress={Keyboard.dismiss}
-          accessible={false}
-        >
-          <View style={styles.inner}>
-            <View style={styles.header}>
-              <Text style={styles.brand}>PANADERÍA DORADO</Text>
-              <Text style={styles.title}>Contactos</Text>
-              <Text style={styles.subtitle}>
-                Encuentra rápidamente a quien buscas.
-              </Text>
+      <View style={styles.container}>
+        <Text style={styles.brand}>PANADERÍA DORADO</Text>
+        <Text style={styles.title}>Nuestros productos</Text>
+        <Text style={styles.subtitle}>
+          Selecciona un producto para ver sus detalles.
+        </Text>
 
-              {/* PASO 1: TextInput controlado */}
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Buscar por nombre o teléfono..."
-                placeholderTextColor="#99704A"
-                value={query}
-                onChangeText={setQuery}
-                keyboardType="default"
-                returnKeyType="search"
-                clearButtonMode="while-editing"
-                autoCorrect={false}
-                autoCapitalize="none"
-                accessibilityLabel="Buscar contactos"
-              />
-
-              <Text style={styles.resultCount}>
-                {filteredContacts.length}{' '}
-                {filteredContacts.length === 1
-                  ? 'contacto encontrado'
-                  : 'contactos encontrados'}
-              </Text>
-            </View>
-
-            {/* Lista filtrada */}
-            <FlatList
-              style={styles.list}
-              contentContainerStyle={[
-                styles.listContent,
-                filteredContacts.length === 0 && styles.emptyListContent,
-              ]}
-              data={filteredContacts}
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              ItemSeparatorComponent={() => (
-                <View style={styles.separator} />
-              )}
-              ListEmptyComponent={renderEmpty}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode={
-                Platform.OS === 'ios' ? 'interactive' : 'on-drag'
-              }
-              showsVerticalScrollIndicator={false}
-            />
-
-            <Text style={styles.footer}>
-              Panadería Dorado · Semana 02
-            </Text>
-          </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        <FlatList
+          data={ITEMS}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </SafeAreaView>
+  );
+}
+
+// Tipado de los parámetros recibidos en Detail
+type DetailRouteProp = NativeStackRouteProp<RootStackParamList, 'Detail'>;
+
+// Pantalla de detalle
+function DetailScreen({
+  navigation,
+  route,
+}: NativeStackScreenProps<RootStackParamList, 'Detail'>) {
+  const { id, name } = route.params;
+
+  return (
+    <SafeAreaView style={styles.detailSafeArea}>
+      <View style={styles.detailContainer}>
+        <Text style={styles.brand}>PANADERÍA DORADO</Text>
+        <Text style={styles.detailLabel}>DETALLE DEL PRODUCTO</Text>
+
+        <View style={styles.detailCard}>
+          <Text style={styles.detailId}>PRODUCTO N.º {id}</Text>
+          <Text style={styles.detailName}>{name}</Text>
+          <Text style={styles.detailDescription}>
+            Has seleccionado este producto de nuestra panadería.
+          </Text>
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.backButtonPressed,
+          ]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Navegador principal
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: { backgroundColor: '#5C3218' },
+          headerTintColor: '#FFF8E7',
+          headerTitleStyle: { fontWeight: '600' },
+          contentStyle: { backgroundColor: '#FFF8E7' },
+        }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ title: 'Inicio' }}
+        />
+
+        <Stack.Screen
+          name="Detail"
+          component={DetailScreen}
+          options={({ route }) => ({
+            title: route.params.name,
+          })}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -177,15 +178,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  inner: {
-    flex: 1,
     paddingHorizontal: 18,
-  },
-  header: {
-    backgroundColor: '#FFF8E7',
     paddingTop: 18,
-    paddingBottom: 14,
   },
   brand: {
     color: '#B77932',
@@ -196,77 +190,53 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#5C3218',
-    fontSize: 28,
+    fontSize: 27,
     fontWeight: 'bold',
   },
   subtitle: {
     color: '#99704A',
     fontSize: 14,
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: 7,
+    marginBottom: 20,
   },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    color: '#5C3218',
-    borderWidth: 1,
-    borderColor: '#D8B98A',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 13,
-    fontSize: 15,
-  },
-  resultCount: {
-    color: '#99704A',
-    fontSize: 12,
-    marginTop: 12,
-    fontWeight: '600',
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingTop: 4,
-    paddingBottom: 12,
-    flexGrow: 1,
-  },
-  contactCard: {
+  itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E8D5B5',
     borderRadius: 12,
-    padding: 13,
+    padding: 14,
   },
-  contactPressed: {
-    opacity: 0.55,
+  itemPressed: {
+    opacity: 0.65,
     backgroundColor: '#F3E5CB',
   },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+  itemNumber: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#B77932',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  avatarText: {
+  itemNumberText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  contactInfo: {
+  itemInfo: {
     flex: 1,
   },
-  contactName: {
+  itemName: {
     color: '#5C3218',
     fontSize: 15,
     fontWeight: 'bold',
   },
-  contactPhone: {
+  itemDescription: {
     color: '#99704A',
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 4,
   },
   arrow: {
@@ -275,41 +245,62 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   separator: {
-    height: 9,
+    height: 10,
   },
-  emptyListContent: {
-    justifyContent: 'center',
+  detailSafeArea: {
+    flex: 1,
+    backgroundColor: '#FFF8E7',
   },
-  emptyContainer: {
-    alignItems: 'center',
+  detailContainer: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 24,
+  },
+  detailLabel: {
+    color: '#99704A',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    marginTop: 22,
+    marginBottom: 12,
+  },
+  detailCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E8D5B5',
-    padding: 25,
+    borderRadius: 16,
+    padding: 22,
   },
-  emptyIcon: {
+  detailId: {
     color: '#B77932',
-    fontSize: 42,
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: 'bold',
   },
-  emptyText: {
+  detailName: {
     color: '#5C3218',
+    fontSize: 25,
+    fontWeight: 'bold',
+    marginTop: 12,
+  },
+  detailDescription: {
+    color: '#99704A',
+    fontSize: 15,
+    lineHeight: 23,
+    marginTop: 10,
+  },
+  backButton: {
+    backgroundColor: '#5C3218',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  backButtonPressed: {
+    opacity: 0.75,
+  },
+  backButtonText: {
+    color: '#FFF8E7',
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  emptySubText: {
-    color: '#99704A',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  footer: {
-    color: '#99704A',
-    fontSize: 11,
-    textAlign: 'center',
-    paddingTop: 10,
-    paddingBottom: 8,
   },
 });
