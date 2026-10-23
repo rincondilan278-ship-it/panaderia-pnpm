@@ -1,224 +1,203 @@
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
-  ScrollView,
+  FlatList,
   View,
   Text,
-  Image,
+  Pressable,
   StyleSheet,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+};
+
+const PRODUCTS: Product[] = [
+  { id: '1', name: 'Pan campesino', category: 'Panes', price: 3000 },
+  { id: '2', name: 'Croissant', category: 'Pastelería', price: 4500 },
+  { id: '3', name: 'Pan de chocolate', category: 'Panes', price: 5000 },
+  { id: '4', name: 'Torta de vainilla', category: 'Tortas', price: 35000 },
+  { id: '5', name: 'Galletas de mantequilla', category: 'Galletas', price: 2500 },
+  { id: '6', name: 'Pan integral', category: 'Panes', price: 4000 },
+  { id: '7', name: 'Dona glaseada', category: 'Pastelería', price: 3500 },
+  { id: '8', name: 'Muffin de chocolate', category: 'Pastelería', price: 4000 },
+  { id: '9', name: 'Torta de zanahoria', category: 'Tortas', price: 6000 },
+  { id: '10', name: 'Pan de queso', category: 'Panes', price: 3000 },
+  { id: '11', name: 'Brownie', category: 'Postres', price: 4500 },
+  { id: '12', name: 'Milhoja', category: 'Postres', price: 5500 },
+];
+
 export default function App() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 1200);
+    });
+
+    setIsRefreshing(false);
+  }, [isRefreshing]);
+
+  const renderItem = ({ item }: { item: Product }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.item,
+        pressed && styles.itemPressed,
+      ]}
+      onPress={() => console.log('Seleccionado:', item.name)}
+    >
+      <View style={styles.itemContent}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemCategory}>{item.category}</Text>
+      </View>
+
+      <Text style={styles.itemPrice}>
+        ${item.price.toLocaleString('es-CO')}
+      </Text>
+    </Pressable>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Panadería Dorado</Text>
-        <Text style={styles.subtitle}>Ejercicio 02 · Flexbox Layouts</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF8E7" />
 
-        {/* LAYOUT 1: Header */}
-        <Text style={styles.sectionTitle}>
-          1. Header con título y botón
-        </Text>
-
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Inicio</Text>
-          <View style={styles.button}>
-            <Text style={styles.buttonText}>+ Nuevo</Text>
-          </View>
-        </View>
-
-        {/* LAYOUT 2: Barra de navegación */}
-        <Text style={styles.sectionTitle}>
-          2. Barra de navegación
-        </Text>
-
-        <View style={styles.tabBar}>
-          <Text style={styles.tab}>Inicio</Text>
-          <Text style={styles.tab}>Productos</Text>
-          <Text style={styles.tab}>Pedidos</Text>
-          <Text style={styles.tab}>Perfil</Text>
-        </View>
-
-        {/* LAYOUT 3: Tarjeta de usuario */}
-        <Text style={styles.sectionTitle}>
-          3. Tarjeta de perfil
-        </Text>
-
-        <View style={styles.userCard}>
-          <Image
-            source={{ uri: 'https://i.pravatar.cc/100?img=12' }}
-            style={styles.avatar}
-          />
-
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>dante raiser</Text>
-            <Text style={styles.userDescription}>
-              Cliente de Panadería Dorado
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        data={PRODUCTS}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <Text style={styles.brand}>PANADERÍA DORADO</Text>
+            <Text style={styles.title}>Catálogo de Productos</Text>
+            <Text style={styles.subtitle}>
+              Descubre nuestros productos recién horneados
             </Text>
           </View>
-        </View>
-
-        {/* LAYOUT 4: Pantalla dividida */}
-        <Text style={styles.sectionTitle}>
-          4. Panel dividido (1:2)
-        </Text>
-
-        <View style={styles.splitScreen}>
-          <View style={styles.sidePanel}>
-            <Text style={styles.panelTitle}>Categorías</Text>
-            <Text style={styles.panelText}>flex: 1</Text>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No hay productos disponibles
+            </Text>
           </View>
-
-          <View style={styles.mainPanel}>
-            <Text style={styles.panelTitle}>Nuestros productos</Text>
-            <Text style={styles.panelText}>flex: 2</Text>
-          </View>
-        </View>
-
-        <Text style={styles.footer}>
-          Panadería Dorado · Hecho con cariño
-        </Text>
-      </ScrollView>
+        }
+        refreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        stickyHeaderIndices={[0]}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          <Text style={styles.footer}>
+            Panadería Dorado · Hecho con cariño
+          </Text>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // Colores generales
   container: {
     flex: 1,
     backgroundColor: '#FFF8E7',
   },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 18,
+    paddingBottom: 30,
+  },
+  listHeader: {
+    backgroundColor: '#FFF8E7',
+    paddingTop: 22,
+    paddingBottom: 18,
+    borderBottomWidth: 2,
+    borderBottomColor: '#E8D5B5',
+    marginBottom: 8,
+  },
+  brand: {
+    color: '#B77932',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
     color: '#5C3218',
+    fontSize: 25,
+    fontWeight: 'bold',
   },
   subtitle: {
-    fontSize: 16,
     color: '#99704A',
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#5C3218',
-    marginTop: 22,
-    marginBottom: 10,
-  },
-
-  // Layout 1
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E8D5B5',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#5C3218',
-  },
-  button: {
-    backgroundColor: '#B77932',
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-
-  // Layout 2
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    backgroundColor: '#5C3218',
-    paddingVertical: 20,
-    borderRadius: 12,
-  },
-  tab: {
-    fontSize: 12,
-    color: '#FFF8E7',
-    fontWeight: '600',
-  },
-
-  // Layout 3
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E8D5B5',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#E8D5B5',
-    marginRight: 14,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#5C3218',
-  },
-  userDescription: {
     fontSize: 14,
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8D5B5',
+  },
+  itemPressed: {
+    opacity: 0.55,
+    backgroundColor: '#F3E5CB',
+  },
+  itemContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  itemName: {
+    color: '#5C3218',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  itemCategory: {
     color: '#99704A',
+    fontSize: 13,
     marginTop: 5,
   },
-
-  // Layout 4
-  splitScreen: {
-    flexDirection: 'row',
-    height: 190,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  sidePanel: {
-    flex: 1,
-    backgroundColor: '#B77932',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 8,
-  },
-  mainPanel: {
-    flex: 2,
-    backgroundColor: '#5C3218',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 8,
-  },
-  panelTitle: {
-    color: '#3a2e2e',
-    fontSize: 14,
+  itemPrice: {
+    color: '#8B5A24',
+    fontSize: 15,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
-  panelText: {
-    color: '#FFF8E7',
-    marginTop: 8,
+  separator: {
+    height: 10,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+  },
+  emptyText: {
+    color: '#99704A',
+    fontSize: 15,
+    textAlign: 'center',
   },
   footer: {
-    textAlign: 'center',
     color: '#99704A',
+    textAlign: 'center',
     marginTop: 24,
+    marginBottom: 10,
+    fontSize: 12,
   },
 });
