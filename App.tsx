@@ -13,294 +13,291 @@ import {
 import {
   NavigationContainer,
   useNavigation,
-  useRoute,
 } from '@react-navigation/native';
 
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationProp,
-  NativeStackScreenProps,
-  NativeStackRouteProp,
-} from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-// Tipos de parámetros de las pantallas
-type RootStackParamList = {
-  Home: undefined;
-  Detail: {
-    id: string;
-    name: string;
-  };
-};
-
-// Tipado del Stack Navigator
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-// Datos de ejemplo
-type Item = {
+// Tipos de navegación
+type Product = {
   id: string;
   name: string;
-  description: string;
+  price: string;
 };
 
-const ITEMS: Item[] = [
-  { id: '1', name: 'Pan artesanal', description: 'Pan recién horneado.' },
-  { id: '2', name: 'Croissant', description: 'Hojaldre de mantequilla.' },
-  { id: '3', name: 'Pan de chocolate', description: 'Pan dulce con chocolate.' },
-  { id: '4', name: 'Almojábana', description: 'Producto tradicional de queso.' },
-  { id: '5', name: 'Torta de vainilla', description: 'Torta suave y esponjosa.' },
+type HomeStackParamList = {
+  HomeList: undefined;
+  HomeDetail: { id: string; name: string; price: string };
+};
+
+type TabParamList = {
+  Home: undefined;
+  Favorites: undefined;
+};
+
+const Stack = createNativeStackNavigator<HomeStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+const PRODUCTS: Product[] = [
+  { id: '1', name: 'Pan artesanal', price: '$3.000' },
+  { id: '2', name: 'Croissant', price: '$4.000' },
+  { id: '3', name: 'Pan de chocolate', price: '$5.000' },
+  { id: '4', name: 'Almojábana', price: '$2.000' },
+  { id: '5', name: 'Torta de vainilla', price: '$6.000' },
 ];
 
-// Pantalla principal
+// Pantalla de inicio: lista de productos
 function HomeScreen() {
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Home'>>();
-
-  const renderItem = ({ item }: { item: Item }) => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.itemCard,
-        pressed && styles.itemPressed,
-      ]}
-      onPress={() => navigation.navigate('Detail', {
-        id: item.id,
-        name: item.name,
-      })}
-    >
-      <View style={styles.itemNumber}>
-        <Text style={styles.itemNumberText}>{item.id}</Text>
-      </View>
-
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemDescription}>{item.description}</Text>
-      </View>
-
-      <Text style={styles.arrow}>›</Text>
-    </Pressable>
-  );
+    useNavigation<NativeStackScreenProps<HomeStackParamList, 'HomeList'>['navigation']>();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF8E7" />
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.heading}>Panadería Dorado</Text>
+      <Text style={styles.subtitle}>Nuestros productos</Text>
 
-      <View style={styles.container}>
-        <Text style={styles.brand}>PANADERÍA DORADO</Text>
-        <Text style={styles.title}>Nuestros productos</Text>
-        <Text style={styles.subtitle}>
-          Selecciona un producto para ver sus detalles.
-        </Text>
-
-        <FlatList
-          data={ITEMS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+      <FlatList
+        data={PRODUCTS}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <Pressable
+            style={({ pressed }) => [
+              styles.productCard,
+              pressed && styles.pressed,
+            ]}
+            onPress={() =>
+              navigation.navigate('HomeDetail', {
+                id: item.id,
+                name: item.name,
+                price: item.price,
+              })
+            }
+          >
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.price}>{item.price}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#5C3218" />
+          </Pressable>
+        )}
+      />
     </SafeAreaView>
   );
 }
 
-// Tipado de los parámetros recibidos en Detail
-type DetailRouteProp = NativeStackRouteProp<RootStackParamList, 'Detail'>;
-
 // Pantalla de detalle
-function DetailScreen({
-  navigation,
-  route,
-}: NativeStackScreenProps<RootStackParamList, 'Detail'>) {
-  const { id, name } = route.params;
+type DetailProps = NativeStackScreenProps<
+  HomeStackParamList,
+  'HomeDetail'
+>;
+
+function DetailScreen({ route, navigation }: DetailProps) {
+  const { id, name, price } = route.params;
 
   return (
-    <SafeAreaView style={styles.detailSafeArea}>
-      <View style={styles.detailContainer}>
-        <Text style={styles.brand}>PANADERÍA DORADO</Text>
-        <Text style={styles.detailLabel}>DETALLE DEL PRODUCTO</Text>
-
-        <View style={styles.detailCard}>
-          <Text style={styles.detailId}>PRODUCTO N.º {id}</Text>
-          <Text style={styles.detailName}>{name}</Text>
-          <Text style={styles.detailDescription}>
-            Has seleccionado este producto de nuestra panadería.
-          </Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.detailCard}>
+        <Ionicons name="fast-food-outline" size={64} color="#B77932" />
+        <Text style={styles.detailTitle}>{name}</Text>
+        <Text style={styles.detailText}>Código del producto: {id}</Text>
+        <Text style={styles.detailPrice}>{price}</Text>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.backButtonPressed,
-          ]}
+          style={styles.button}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>← Volver</Text>
+          <Text style={styles.buttonText}>Volver a Inicio</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-// Navegador principal
+// Stack propio del tab Inicio
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeList" component={HomeScreen} />
+      <Stack.Screen name="HomeDetail" component={DetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Pantalla de Favoritos
+function FavoritesScreen() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.heading}>Mis favoritos</Text>
+      <View style={styles.emptyCard}>
+        <Ionicons name="heart-outline" size={56} color="#B77932" />
+        <Text style={styles.emptyTitle}>Tus favoritos aparecerán aquí</Text>
+        <Text style={styles.subtitle}>
+          Esta sección es independiente de Inicio.
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Navegación principal con tabs
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          headerStyle: { backgroundColor: '#5C3218' },
-          headerTintColor: '#FFF8E7',
-          headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: '#FFF8E7' },
-        }}
+      <StatusBar barStyle="light-content" backgroundColor="#5C3218" />
+
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => {
+            const iconName =
+              route.name === 'Home'
+                ? focused
+                  ? 'home'
+                  : 'home-outline'
+                : focused
+                  ? 'heart'
+                  : 'heart-outline';
+
+            return (
+              <Ionicons
+                name={iconName as keyof typeof Ionicons.glyphMap}
+                size={size}
+                color={color}
+              />
+            );
+          },
+          tabBarActiveTintColor: '#B77932',
+          tabBarInactiveTintColor: '#8C8176',
+          tabBarStyle: {
+            backgroundColor: '#FFF8E7',
+            borderTopColor: '#E8D5B5',
+            height: 64,
+            paddingTop: 6,
+            paddingBottom: 6,
+          },
+          tabBarLabelStyle: {
+            fontWeight: 'bold',
+          },
+        })}
       >
-        <Stack.Screen
+        <Tab.Screen
           name="Home"
-          component={HomeScreen}
+          component={HomeStack}
           options={{ title: 'Inicio' }}
         />
-
-        <Stack.Screen
-          name="Detail"
-          component={DetailScreen}
-          options={({ route }) => ({
-            title: route.params.name,
-          })}
+        <Tab.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+          options={{ title: 'Favoritos' }}
         />
-      </Stack.Navigator>
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFF8E7',
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-  },
-  brand: {
-    color: '#B77932',
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  title: {
-    color: '#5C3218',
-    fontSize: 27,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    color: '#99704A',
-    fontSize: 14,
-    marginTop: 7,
-    marginBottom: 20,
-  },
-  itemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E8D5B5',
-    borderRadius: 12,
-    padding: 14,
-  },
-  itemPressed: {
-    opacity: 0.65,
-    backgroundColor: '#F3E5CB',
-  },
-  itemNumber: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#B77932',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  itemNumberText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    color: '#5C3218',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  itemDescription: {
-    color: '#99704A',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  arrow: {
-    color: '#B77932',
-    fontSize: 28,
-    marginLeft: 8,
-  },
-  separator: {
-    height: 10,
-  },
-  detailSafeArea: {
-    flex: 1,
     backgroundColor: '#FFF8E7',
   },
-  detailContainer: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 24,
-  },
-  detailLabel: {
-    color: '#99704A',
-    fontSize: 12,
+  heading: {
+    fontSize: 28,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
-    marginTop: 22,
-    marginBottom: 12,
+    color: '#5C3218',
+    marginTop: 20,
+    marginHorizontal: 20,
   },
-  detailCard: {
+  subtitle: {
+    fontSize: 15,
+    color: '#8C6B50',
+    marginTop: 6,
+    marginHorizontal: 20,
+  },
+  list: {
+    padding: 16,
+    gap: 12,
+  },
+  productCard: {
     backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#E8D5B5',
-    borderRadius: 16,
-    padding: 22,
   },
-  detailId: {
-    color: '#B77932',
-    fontSize: 13,
+  productInfo: {
+    flex: 1,
+    gap: 5,
+  },
+  productName: {
+    fontSize: 17,
     fontWeight: 'bold',
-  },
-  detailName: {
     color: '#5C3218',
-    fontSize: 25,
-    fontWeight: 'bold',
-    marginTop: 12,
   },
-  detailDescription: {
-    color: '#99704A',
+  price: {
     fontSize: 15,
-    lineHeight: 23,
-    marginTop: 10,
+    color: '#B77932',
+    fontWeight: '600',
   },
-  backButton: {
-    backgroundColor: '#5C3218',
-    paddingVertical: 15,
-    borderRadius: 12,
+  pressed: {
+    opacity: 0.65,
+  },
+  detailCard: {
+    margin: 20,
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     alignItems: 'center',
-    marginTop: 22,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: '#E8D5B5',
   },
-  backButtonPressed: {
-    opacity: 0.75,
+  detailTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#5C3218',
+    textAlign: 'center',
   },
-  backButtonText: {
+  detailText: {
+    fontSize: 16,
+    color: '#8C6B50',
+  },
+  detailPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#B77932',
+  },
+  button: {
+    backgroundColor: '#5C3218',
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  buttonText: {
     color: '#FFF8E7',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  emptyCard: {
+    margin: 20,
+    padding: 28,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    gap: 14,
+    borderWidth: 1,
+    borderColor: '#E8D5B5',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#5C3218',
+    textAlign: 'center',
   },
 });
