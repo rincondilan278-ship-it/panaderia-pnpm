@@ -1,132 +1,191 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   SafeAreaView,
-  FlatList,
   View,
   Text,
+  TextInput,
+  FlatList,
   Pressable,
   StyleSheet,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
   StatusBar,
-  ActivityIndicator,
 } from 'react-native';
 
-type Product = {
+type Contact = {
   id: string;
   name: string;
-  category: string;
-  price: number;
+  phone: string;
 };
 
-const PRODUCTS: Product[] = [
-  { id: '1', name: 'Pan campesino', category: 'Panes', price: 3000 },
-  { id: '2', name: 'Croissant', category: 'Pastelería', price: 4500 },
-  { id: '3', name: 'Pan de chocolate', category: 'Panes', price: 5000 },
-  { id: '4', name: 'Torta de vainilla', category: 'Tortas', price: 35000 },
-  { id: '5', name: 'Galletas de mantequilla', category: 'Galletas', price: 2500 },
-  { id: '6', name: 'Pan integral', category: 'Panes', price: 4000 },
-  { id: '7', name: 'Dona glaseada', category: 'Pastelería', price: 3500 },
-  { id: '8', name: 'Muffin de chocolate', category: 'Pastelería', price: 4000 },
-  { id: '9', name: 'Torta de zanahoria', category: 'Tortas', price: 6000 },
-  { id: '10', name: 'Pan de queso', category: 'Panes', price: 3000 },
-  { id: '11', name: 'Brownie', category: 'Postres', price: 4500 },
-  { id: '12', name: 'Milhoja', category: 'Postres', price: 5500 },
+const CONTACTS: Contact[] = [
+  { id: '1', name: 'Ana Martínez', phone: '3001234567' },
+  { id: '2', name: 'Carlos Rodríguez', phone: '3102345678' },
+  { id: '3', name: 'Laura Gómez', phone: '3203456789' },
+  { id: '4', name: 'Daniel Pérez', phone: '3014567890' },
+  { id: '5', name: 'María Fernández', phone: '3155678901' },
+  { id: '6', name: 'Andrés López', phone: '3006789012' },
+  { id: '7', name: 'Sofía Ramírez', phone: '3117890123' },
+  { id: '8', name: 'Juan Torres', phone: '3218901234' },
+  { id: '9', name: 'Valentina Castro', phone: '3029012345' },
+  { id: '10', name: 'Mateo Herrera', phone: '3160123456' },
+  { id: '11', name: 'Isabella Moreno', phone: '3121234567' },
+  { id: '12', name: 'Sebastián Díaz', phone: '3222345678' },
 ];
 
 export default function App() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // PASO 1: Estado controlado del buscador
+  const [query, setQuery] = useState<string>('');
 
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
+  // PASO 2: Filtrar contactos con useMemo
+  const filteredContacts = useMemo(() => {
+    const search = query.trim().toLowerCase();
 
-    setIsRefreshing(true);
+    if (!search) {
+      return CONTACTS;
+    }
 
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 1200);
-    });
+    return CONTACTS.filter(
+      (contact) =>
+        contact.name.toLowerCase().includes(search) ||
+        contact.phone.includes(search)
+    );
+  }, [query]);
 
-    setIsRefreshing(false);
-  }, [isRefreshing]);
-
-  const renderItem = ({ item }: { item: Product }) => (
+  // PASO 3: Renderizar cada contacto
+  const renderItem = ({ item }: { item: Contact }) => (
     <Pressable
       style={({ pressed }) => [
-        styles.item,
-        pressed && styles.itemPressed,
+        styles.contactCard,
+        pressed && styles.contactPressed,
       ]}
-      onPress={() => console.log('Seleccionado:', item.name)}
+      onPress={() => {
+        Keyboard.dismiss();
+        console.log('Contacto seleccionado:', item.name);
+      }}
     >
-      <View style={styles.itemContent}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemCategory}>{item.category}</Text>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>
+          {item.name.charAt(0).toUpperCase()}
+        </Text>
       </View>
 
-      <Text style={styles.itemPrice}>
-        ${item.price.toLocaleString('es-CO')}
-      </Text>
+      <View style={styles.contactInfo}>
+        <Text style={styles.contactName}>{item.name}</Text>
+        <Text style={styles.contactPhone}>{item.phone}</Text>
+      </View>
+
+      <Text style={styles.arrow}>›</Text>
     </Pressable>
   );
 
+  // PASO 3: Estado vacío personalizado
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyIcon}>⌕</Text>
+      <Text style={styles.emptyText}>
+        Sin resultados para "{query}"
+      </Text>
+      <Text style={styles.emptySubText}>
+        Intenta con otro nombre o número.
+      </Text>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8E7" />
 
-      <FlatList
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        data={PRODUCTS}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={styles.brand}>PANADERÍA DORADO</Text>
-            <Text style={styles.title}>Catálogo de Productos</Text>
-            <Text style={styles.subtitle}>
-              Descubre nuestros productos recién horneados
+      {/* PASO 4: Control del teclado */}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+          accessible={false}
+        >
+          <View style={styles.inner}>
+            <View style={styles.header}>
+              <Text style={styles.brand}>PANADERÍA DORADO</Text>
+              <Text style={styles.title}>Contactos</Text>
+              <Text style={styles.subtitle}>
+                Encuentra rápidamente a quien buscas.
+              </Text>
+
+              {/* PASO 1: TextInput controlado */}
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Buscar por nombre o teléfono..."
+                placeholderTextColor="#99704A"
+                value={query}
+                onChangeText={setQuery}
+                keyboardType="default"
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+                autoCorrect={false}
+                autoCapitalize="none"
+                accessibilityLabel="Buscar contactos"
+              />
+
+              <Text style={styles.resultCount}>
+                {filteredContacts.length}{' '}
+                {filteredContacts.length === 1
+                  ? 'contacto encontrado'
+                  : 'contactos encontrados'}
+              </Text>
+            </View>
+
+            {/* Lista filtrada */}
+            <FlatList
+              style={styles.list}
+              contentContainerStyle={[
+                styles.listContent,
+                filteredContacts.length === 0 && styles.emptyListContent,
+              ]}
+              data={filteredContacts}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              ItemSeparatorComponent={() => (
+                <View style={styles.separator} />
+              )}
+              ListEmptyComponent={renderEmpty}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={
+                Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+              }
+              showsVerticalScrollIndicator={false}
+            />
+
+            <Text style={styles.footer}>
+              Panadería Dorado · Semana 02
             </Text>
           </View>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No hay productos disponibles
-            </Text>
-          </View>
-        }
-        refreshing={isRefreshing}
-        onRefresh={handleRefresh}
-        stickyHeaderIndices={[0]}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          <Text style={styles.footer}>
-            Panadería Dorado · Hecho con cariño
-          </Text>
-        }
-      />
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFF8E7',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFF8E7',
   },
-  list: {
+  inner: {
     flex: 1,
-  },
-  listContent: {
     paddingHorizontal: 18,
-    paddingBottom: 30,
   },
-  listHeader: {
+  header: {
     backgroundColor: '#FFF8E7',
-    paddingTop: 22,
-    paddingBottom: 18,
-    borderBottomWidth: 2,
-    borderBottomColor: '#E8D5B5',
-    marginBottom: 8,
+    paddingTop: 18,
+    paddingBottom: 14,
   },
   brand: {
     color: '#B77932',
@@ -137,67 +196,120 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#5C3218',
-    fontSize: 25,
+    fontSize: 28,
     fontWeight: 'bold',
   },
   subtitle: {
     color: '#99704A',
     fontSize: 14,
-    marginTop: 8,
-    lineHeight: 20,
+    marginTop: 6,
+    marginBottom: 18,
   },
-  item: {
+  searchInput: {
+    backgroundColor: '#FFFFFF',
+    color: '#5C3218',
+    borderWidth: 1,
+    borderColor: '#D8B98A',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+    fontSize: 15,
+  },
+  resultCount: {
+    color: '#99704A',
+    fontSize: 12,
+    marginTop: 12,
+    fontWeight: '600',
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingTop: 4,
+    paddingBottom: 12,
+    flexGrow: 1,
+  },
+  contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E8D5B5',
+    borderRadius: 12,
+    padding: 13,
   },
-  itemPressed: {
+  contactPressed: {
     opacity: 0.55,
     backgroundColor: '#F3E5CB',
   },
-  itemContent: {
-    flex: 1,
+  avatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#B77932',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
-  itemName: {
-    color: '#5C3218',
-    fontSize: 16,
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 20,
     fontWeight: 'bold',
   },
-  itemCategory: {
-    color: '#99704A',
-    fontSize: 13,
-    marginTop: 5,
+  contactInfo: {
+    flex: 1,
   },
-  itemPrice: {
-    color: '#8B5A24',
+  contactName: {
+    color: '#5C3218',
     fontSize: 15,
     fontWeight: 'bold',
   },
+  contactPhone: {
+    color: '#99704A',
+    fontSize: 13,
+    marginTop: 4,
+  },
+  arrow: {
+    color: '#B77932',
+    fontSize: 28,
+    marginLeft: 8,
+  },
   separator: {
-    height: 10,
+    height: 9,
+  },
+  emptyListContent: {
+    justifyContent: 'center',
   },
   emptyContainer: {
-    paddingVertical: 40,
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8D5B5',
+    padding: 25,
+  },
+  emptyIcon: {
+    color: '#B77932',
+    fontSize: 42,
+    marginBottom: 8,
   },
   emptyText: {
-    color: '#99704A',
-    fontSize: 15,
+    color: '#5C3218',
+    fontSize: 16,
+    fontWeight: 'bold',
     textAlign: 'center',
+  },
+  emptySubText: {
+    color: '#99704A',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 8,
   },
   footer: {
     color: '#99704A',
+    fontSize: 11,
     textAlign: 'center',
-    marginTop: 24,
-    marginBottom: 10,
-    fontSize: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
 });
